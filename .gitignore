@@ -1,3 +1,5 @@
 myenv/
 Dataset/
 model.pkl
+**/__pycache__/
+
