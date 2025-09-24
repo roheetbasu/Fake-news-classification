@@ -1,7 +1,10 @@
+from Src.Preprocessing import Preprocessing
+from Src.Dataset import FakeNewsDataset
+from Src.Model import load_model
+from Src.Inference import predict_fake_news
+from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
-from transformers import BertTokenizer
-from torch.utils.data import Dataset, DataLoader
-import torch
+from sklearn.metrics import classification_report
 
 # Import your preprocessing class
 from Src.Preprocessing import preprocessing
@@ -16,28 +19,13 @@ train_texts, test_texts, train_labels, test_labels = train_test_split(
     texts, labels, test_size=0.2, random_state=42
 )
 
-# Tokenize
-tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
-train_encodings = tokenizer(train_texts, truncation=True, padding=True, max_length=256)
-test_encodings  = tokenizer(test_texts,  truncation=True, padding=True, max_length=256)
+#load model and tokenizer
+model, tokenizer, device = load_model("best_bert_model.pkl")
 
-# Create Dataset class
-class FakeNewsDataset(Dataset):
-    def __init__(self, encodings, labels):
-        self.encodings = encodings
-        self.labels = labels
+#tokenize the dataset
+test_encodings = tokenizer(test_texts, truncation=True, padding=True, max_length=256)
+test_dataset = FakeNewsDataset(test_encodings, test_labels)
+test_loader = DataLoader(test_dataset, batch_size=8)
 
-    def __getitem__(self, idx):
-        item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
-        item["labels"] = torch.tensor(self.labels[idx])
-        return item
 
-    def __len__(self):
-        return len(self.labels)
 
-train_dataset = FakeNewsDataset(train_encodings, train_labels)
-test_dataset  = FakeNewsDataset(test_encodings, test_labels)
-
-#DataLoader
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-test_loader  = DataLoader(test_dataset, batch_size=16)
